@@ -1,0 +1,3 @@
+-> Here we are using both cloudinary and Google drive for storage
+-> All Talent, Achievement, Parent, Post Content will be saved on Google drive as it was not requested offenly
+-> All Profile Photos are saved on Clodinary becase it will be requested more frequently and required low latency 
