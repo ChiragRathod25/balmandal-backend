@@ -26,7 +26,7 @@ const addAttendance = asyncHandler(async (req, res, next) => {
   }
 
   const { attendanceList } = req.body;
-  // attendanceList is an array of objects
+  // attendanceList is an array of objects, which contains userId and status of list whose status is changed
   // each object should have userId and status
   // status should be a boolean value
   if (!attendanceList) {
@@ -38,52 +38,40 @@ const addAttendance = asyncHandler(async (req, res, next) => {
   if (attendanceList.length === 0) {
     throw new ApiError(400, "Attendance List should not be empty");
   }
-  const userIds = attendanceList.map((attendance) => attendance.userId);
-  const users = await User.find({ _id: { $in: userIds } });
-  if (users.length !== userIds.length) {
-    throw new ApiError(404, "User not found");
-  }
 
-  //check if attendance of the user is marked or not, if marked then update the status else create a new attendance
-  const createdAttendances = [];
-  for (let attendance of attendanceList) {
+  //check in the db, is the userId present or not
+  // if already marked then update else create new attendance
+
+  const bulkOps = attendanceList.map((attendance) => {
     const { userId, status } = attendance;
-    const attendanceExist = await Attendance.findOne({ eventId, userId });
-    if (attendanceExist) {
-      const updatedAttendance = await Attendance.findByIdAndUpdate(
-        attendanceExist._id,
-        {
-          status: status === true ? "present" : "absent",
-          markedBy: req.user._id,
+    if (!userId) {
+      throw new ApiError(400, "User Id is required");
+    }
+    if (!status) {
+      throw new ApiError(400, "Status is required");
+    }
+    return {
+      updateOne: {
+        filter: { eventId, userId },
+        update: {
+          $set: {
+            eventId,
+            userId,
+            status,
+            markedBy: req.user._id,
+          },
         },
-        { new: true }
-      );
-      if (!updatedAttendance) {
-        throw new ApiError(500, "Error in updating attendance");
-      }
-    } else {
-      const newAttendance = {
-        eventId,
-        userId,
-        status: status === true ? "present" : "absent",
-        markedBy: req.user._id,
-      };
-      createdAttendances.push(newAttendance);
-    }
-  }
-  let attendance = null;
-  if (createdAttendances.length > 0) {
-    attendance = await Attendance.insertMany(createdAttendances);
-    if (!attendance) {
-      throw new ApiError(500, "Error in marking attendance");
-    }
-  }
-
+        upsert: true,
+      },
+    };
+  });
+  const result = await Attendance.bulkWrite(bulkOps, { ordered: false });
+ 
   res
     .status(200)
-    .json(new ApiResponce(200, attendance, "Attendance marked successfully"));
-
+    .json(new ApiResponce(200, result, "Attendance marked successfully"));
 });
+
 
 const updateAttendance = asyncHandler(async (req, res, next) => {
   const { status } = req.body;
@@ -123,6 +111,11 @@ const getAttendanceByEventId = asyncHandler(async (req, res, next) => {
   if (!eventId) {
     throw new ApiError(400, "Event Id is required");
   }
+
+  // get all available users
+  const allUsers = await User.find({});
+
+  // get all attendances for the event
   const attendances = await Attendance.aggregate([
     {
       $match: {
@@ -156,18 +149,55 @@ const getAttendanceByEventId = asyncHandler(async (req, res, next) => {
     },
     {
       $sort: {
-        status: -1
-      }
-    }
+        status: -1,
+      },
+    },    
   ]);
-  if(!attendances){
-    throw new ApiError(404, "Attendances not found");
-  }
 
+  // now we have all the attendances for the event which are marked by the user
+  // now we need to get the users who are not marked by the user and add them to the list
+
+  const markedUserIds = attendances.map((attendance) => attendance.userId.toString()); // Array of an marked userId
+ 
+  const unmarkedUsers = allUsers.filter(
+    (user) => !markedUserIds.includes(user._id.toString())
+  );
+  const unmarkedAttendances = unmarkedUsers.map((user) => {
+    return {
+      userId: user._id,
+      eventId: new mongoose.Types.ObjectId(eventId),
+      status: "absent",
+      user: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+      },
+
+      markedBy: null,
+    };
+  });
+
+  //merge the marked and unmarked attendances
+  const eventAttendance = attendances
+    .concat(unmarkedAttendances)
+    .sort((a, b) => {
+      if (a.status === "present" && b.status === "absent") {
+        return -1;
+      }
+      if (a.status === "absent" && b.status === "present") {
+        return 1;
+      }
+      return 0;
+    })
+
+    if(!eventAttendance) {
+      throw new ApiError(404, "Attendances not found");
+    }
+    
   res
     .status(200)
     .json(
-      new ApiResponce(200, attendances, "Attendances fetched successfully")
+      new ApiResponce(200, eventAttendance, "Attendances fetched successfully")
     );
 });
 
@@ -181,47 +211,47 @@ const getAttendanceByUserId = asyncHandler(async (req, res, next) => {
     {
       $match: {
         userId: new mongoose.Types.ObjectId(userId),
-      }
+      },
     },
     {
       $lookup: {
         from: "events",
         localField: "eventId",
         foreignField: "_id",
-        as: "event"
-      }
+        as: "event",
+      },
     },
     {
       $addFields: {
         event: {
-          $first: "$event"
-        }
-      }
+          $first: "$event",
+        },
+      },
     },
     {
       $group: {
-        _id:   "$event.eventType",
+        _id: "$event.eventType",
         total: {
-          $sum: 1
+          $sum: 1,
         },
-          present: {
-          $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] }
+        present: {
+          $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] },
         },
         absent: {
-          $sum: { $cond: [{ $eq: ["$status", "absent"] }, 1, 0] }
-        }
-      }
+          $sum: { $cond: [{ $eq: ["$status", "absent"] }, 1, 0] },
+        },
+      },
     },
     {
       $addFields: {
-        eventType: "$_id"
-      }
+        eventType: "$_id",
+      },
     },
     {
       $sort: {
-        eventType: 1
-      }
-    }
+        eventType: 1,
+      },
+    },
   ]);
   if (!attendances) {
     throw new ApiError(404, "Attendances not found");

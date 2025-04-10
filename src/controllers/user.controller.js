@@ -99,11 +99,14 @@ const login = asyncHandler(async (req, res) => {
   //remove password from the obj
   delete user.password;
 
+  const isProd = process.env.NODE_ENV === "production";
+
   const options = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "none", // for cors origin requests
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
   };
+
   res
     .status(200)
     .cookie("accessToken", accessToken, options)
