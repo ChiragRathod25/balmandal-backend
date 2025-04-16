@@ -7,8 +7,9 @@ import mongoose from "mongoose";
 
 const addTalent = asyncHandler(async (req, res) => {
   const id = req.user._id;
-  const { heading, description } = req.body;
+  const { heading, description,talentType } = req.body;
   if (!heading) throw new ApiError(400, `Heading is required`);
+  if(!talentType) throw new ApiError(400, `Talent type is required`);
   const images = [];
 
   if (req.files) {
@@ -31,6 +32,7 @@ const addTalent = asyncHandler(async (req, res) => {
   const talent = await Talent.create({
     heading,
     description,
+    talentType,
     userId: id,
     images,
   });
@@ -42,7 +44,7 @@ const addTalent = asyncHandler(async (req, res) => {
 
 const updateTalent = asyncHandler(async (req, res) => {
   const talentId = req.params.id;
-  const { heading, description, cloudFiles } = req.body;
+  const { heading, description, cloudFiles,talentType } = req.body;
   const talent = await Talent.findById(talentId);
   if (!talent) throw new ApiError(404, `Invalid talent request`);
 
@@ -84,6 +86,7 @@ const updateTalent = asyncHandler(async (req, res) => {
       heading,
       description,
       images: files,
+      talentType,
     },
     { new: true }
   );

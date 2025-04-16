@@ -21,8 +21,10 @@ import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
 router.route("/uploadFile").post(upload.single("upload"), async (req, res) => {
+  
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
     const tempFilePath = process.env.API_BASE_URL+ '/temp/' + req.file.filename;
+   
 
     res.status(200).json({ url: tempFilePath });
 });

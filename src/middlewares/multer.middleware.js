@@ -1,5 +1,5 @@
 import multer from "multer"
-const tempDir = "/tmp/uploads";
+const tempDir = "./public/temp";
 import fs from "fs"
 
 // Ensure the directory exists

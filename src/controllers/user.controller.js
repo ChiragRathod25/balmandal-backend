@@ -131,10 +131,12 @@ const logout = asyncHandler(async (req, res) => {
     { new: true }
   );
 
+  const isProd = process.env.NODE_ENV === "production";
+
   const options = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "none", // for cors origin requests
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
   };
 
   res
@@ -259,7 +261,7 @@ const resetPassword = asyncHandler(async (req, res) => {
     ],
   });
 
-  if (!user) throw new ApiError(404, `Invalid token`);
+  if (!user) throw new ApiError(404, `Invalid token or expired token`);
 
   const { password } = req.body;
   if (!password) throw new ApiError(404, `Password is required`);
@@ -359,10 +361,13 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   const { accessToken, refreshToken } = await generateRefreshAccessToken(
     decodeToken._id
   );
+ 
+  const isProd = process.env.NODE_ENV === "production";
+
   const options = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "none", // for cors origin requests
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
   };
 
   res

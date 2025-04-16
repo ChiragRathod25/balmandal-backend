@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const talentSchema = new mongoose.Schema(
   {
+    talentType: {
+      type: String,
+      required: true,
+    },
+
     heading: {
       type: String,
       required: true,
