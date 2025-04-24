@@ -101,16 +101,26 @@ const login = asyncHandler(async (req, res) => {
 
   const isProd = process.env.NODE_ENV === "production";
 
-  const options = {
+  const baseCookieOptions = {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? "none" : "lax",
   };
 
+  const accessTokenOptions = {
+    ...baseCookieOptions,
+    maxAge: 15 * 60 * 1000, // 15 min
+  };
+
+  const refreshTokenOptions = {
+    ...baseCookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  };
+
   res
     .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, accessTokenOptions)
+    .cookie("refreshToken", refreshToken, refreshTokenOptions)
     .json(
       new ApiResponce(
         200,
@@ -361,19 +371,29 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   const { accessToken, refreshToken } = await generateRefreshAccessToken(
     decodeToken._id
   );
- 
+
   const isProd = process.env.NODE_ENV === "production";
 
-  const options = {
+  const baseCookieOptions = {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? "none" : "lax",
   };
 
+  const accessTokenOptions = {
+    ...baseCookieOptions,
+    maxAge: 15 * 60 * 1000, // 15 min
+  };
+
+  const refreshTokenOptions = {
+    ...baseCookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  };
+
   res
     .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, accessTokenOptions)
+    .cookie("refreshToken", refreshToken, refreshTokenOptions)
     .json(
       new ApiResponce(
         200,
