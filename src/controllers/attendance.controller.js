@@ -15,6 +15,25 @@ import mongoose from "mongoose";
 // 6. getAttendanceStatusByEventIdAndUserId
 // 7. updateAttendanceStatus
 
+const initializingAttendance =async (eventId,createdBy)=>{
+  const event = await Event.findById(eventId);
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
+
+  const allUsers = await User.find({},{ _id: 1 });
+  const attendanceList = allUsers.map((user) => {
+    return {
+      userId: user._id,
+      eventId: eventId,
+      status: "absent",
+      markedBy: createdBy,
+    };
+  });
+  await Attendance.insertMany(attendanceList);
+  return attendanceList;
+}
+
 const addAttendance = asyncHandler(async (req, res, next) => {
   const { eventId } = req.params;
   if (!eventId) {
@@ -256,6 +275,7 @@ const getAttendanceByUserId = asyncHandler(async (req, res, next) => {
   if (!attendances) {
     throw new ApiError(404, "Attendances not found");
   }
+ 
   res
     .status(200)
     .json(
@@ -311,4 +331,5 @@ export {
   getAttendanceByUserId,
   getAttendanceStatusByEventIdAndUserId,
   updateAttendanceStatus,
+  initializingAttendance
 };
