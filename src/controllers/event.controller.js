@@ -3,9 +3,12 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponce } from "../utils/ApiResponce.js";
 import { Event } from "../models/event.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { initializingAttendance } from "./attendance.controller.js";
+import { logger } from "../utils/logger.js";
 
- const addEvent = asyncHandler(async (req, res, next) => {
-  const { title, description, status, startAt, endAt,venue,eventType } = req.body;
+const addEvent = asyncHandler(async (req, res, next) => {
+  const { title, description, status, startAt, endAt, venue, eventType } =
+    req.body;
 
   if (!title || !eventType) {
     throw new ApiError(400, "Title and Event type is required");
@@ -41,6 +44,24 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
     eventType,
     media: mediaFiles,
   });
+  if (!event) {
+    throw new ApiError(500, "Error while creating event");
+  }
+
+  // Initialize attendance for the event , mark all users as absent,
+  initializingAttendance(event._id, req.user._id)
+    .then((attendanceList) => {
+      logger.info("Attendance initialized successfully", {
+        eventId: event._id,
+        attendanceList,
+      });
+    })
+    .catch((error) => {
+      logger.error("Error while initializing attendance", {
+        error,
+        eventId: event._id,
+      });
+    });
 
   res
     .status(200)
@@ -83,7 +104,6 @@ const updateEvent = asyncHandler(async (req, res, next) => {
         }
         newMediaFiles.push(media.url);
       } catch (error) {
-
         throw new ApiError(400, `Error while uploading media`, error);
       }
     }
