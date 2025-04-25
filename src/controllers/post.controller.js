@@ -35,8 +35,8 @@ const uploadFilesToBucket = asyncHandler(async (req, res,next) => {
       
       //convert the server's public url to local url 
       src=src.replace(process.env.API_BASE_URL,"public")
-       //convert '/' to '\' for windows
-      src=src.replace(/\//g,"\\")
+      //  //convert '/' to '\' for windows
+      // src=src.replace(/\//g,"\\")
       
       if (!src) {
         // logger.log("No src found in the image tag", match);
@@ -48,14 +48,15 @@ const uploadFilesToBucket = asyncHandler(async (req, res,next) => {
         continue;
       }
       try {
+        console.log("Uploading image to cloudinary", src);
 
         const result = await uploadOnCloudinary(src);
      
         req.body.content = content.replace(intialSrc, result.secure_url);
         
       } catch (error) {
-        logger.erorr("Error in uploading image to cloudinary", error);
-        throw new ApiError(500, "Error in uploading image to cloudinary");
+        logger.log("Error in uploading image to cloudinary", error);
+        throw new ApiError(500, "Error in uploading image to cloudinary",error);
       }
     }
   }
