@@ -21,7 +21,9 @@ const initializingAttendance =async (eventId,createdBy)=>{
     throw new ApiError(404, "Event not found");
   }
 
-  const allUsers = await User.find({},{ _id: 1 });
+  const allUsers = await User.find({
+    isActive: true,
+  },{ _id: 1 });
   const attendanceList = allUsers.map((user) => {
     return {
       userId: user._id,
@@ -132,7 +134,9 @@ const getAttendanceByEventId = asyncHandler(async (req, res, next) => {
   }
 
   // get all available users
-  const allUsers = await User.find({});
+  const allUsers = await User.find({
+    isActive: true,
+  });
 
   // get all attendances for the event
   const attendances = await Attendance.aggregate([
