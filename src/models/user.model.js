@@ -54,12 +54,17 @@ const userSchema = mongoose.Schema(
       type: String,
       enum: ["Hindi", "Gujarati", "English", "Marathi"],
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
     refreshToken: {
       type: String,
     },
     resetToken: {
       type: String,
     },
+    
   },
   { timestamps: true }
 );

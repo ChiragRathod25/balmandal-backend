@@ -99,6 +99,15 @@ const login = asyncHandler(async (req, res) => {
   //remove password from the obj
   delete user.password;
 
+  //check if the user is active or not
+  if (!user?.isActive) {
+    throw new ApiError(
+      404,
+      `Your account is not active. Please contact the admin to activate your account`
+    );
+  }
+  
+
   const isProd = process.env.NODE_ENV === "production";
 
   const baseCookieOptions = {
@@ -174,23 +183,44 @@ const updateuserDetails = asyncHandler(async (req, res) => {
   if (!user) throw new ApiError(404, `invalid user request`);
 
   try {
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      {
-        firstName,
-        lastName,
-        middleName,
-        email,
-        mobile,
-        DOB,
-        school,
-        std,
-        mediumOfStudy,
-      },
-      { new: true }
+
+    if(firstName && firstName.trim() !== "" && firstName !== user.firstName) {
+      user.firstName = firstName;
+    }
+    
+    if(lastName && lastName.trim() !== "" && lastName !== user.lastName) {
+      user.lastName = lastName;
+    }
+    if(middleName && middleName.trim() !== "" && middleName !== user.middleName) {
+      user.middleName = middleName;
+    }
+    if(email && email.trim() !== "" && email !== user.email) {
+      user.email = email;
+    }
+    if(mobile && mobile.trim() !== "" && mobile !== user.mobile) {
+      user.mobile = mobile;
+    }
+    if(DOB && DOB.trim() !== "" && DOB !== user.DOB) {
+      user.DOB = DOB;
+    }
+    if(school && school.trim() !== "" && school !== user.school) {
+      user.school = school;
+    }
+    if(std && std.trim() !== "" && std !== user.std) {
+      user.std = std;
+    }
+    if(mediumOfStudy && mediumOfStudy.trim() !== "" && mediumOfStudy !== user.mediumOfStudy) {
+      user.mediumOfStudy = mediumOfStudy;
+    }
+    await user.save({ validateBeforeSave: false });
+    const updatedUser = await User.findById(id).select(
+      "-password -refreshToken"
     );
-    if (!updatedUser)
-      throw new ApiError(404, `Error while updating user details`);
+    if (!updatedUser) throw new ApiError(404, `invalid user request`);
+    //remove password from the obj
+    delete updatedUser.password;
+    delete updatedUser.refreshToken;
+    delete updatedUser.resetToken;
 
     res
       .status(200)
@@ -413,6 +443,7 @@ const getUserById = asyncHandler(async (req, res) => {
     .json(new ApiResponce(200, user, `User fetched successfully !!`));
 });
 
+
 export {
   register,
   login,
@@ -425,4 +456,5 @@ export {
   refreshAccessToken,
   getUserById,
   deleteFile,
+  
 };
