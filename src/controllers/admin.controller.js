@@ -35,7 +35,7 @@ const getAllActiveUsers = asyncHandler(async (req, res, next) => {
 
 const getAllUsers = asyncHandler(async (req, res, next) => {
   // get all users either active or inactive
-
+  //sort active users first and then inactive users
   const users = await User.find(
     {},
     {
@@ -43,7 +43,7 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
       resetToken: 0,
       __v: 0,
     }
-  ).select("-password -refreshToken");
+  ).select("-password -refreshToken").sort({ isActive: -1 ,createdAt: -1});
   if (!users) throw new ApiError(404, "No user found");
   res
     .status(200)
