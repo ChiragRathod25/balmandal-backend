@@ -34,13 +34,17 @@ const generateRefreshAccessToken = async (userId) => {
 };
 
 const register = asyncHandler(async (req, res) => {
-  const { username, email, firstName, lastName, mobile, password } = req.body;
+  let { username, email, firstName, lastName, mobile, password } = req.body;
   if (
     [username, email, firstName, lastName, mobile, password].some(
       (field) => (field?.trim() ?? "") === ""
     )
   )
     throw new ApiError(404, "All fields are required");
+
+  // trim the fields
+  username = username.trim();
+  email = email.trim();
 
   const existedUser = await User.findOne({
     username: { $regex: new RegExp(username, "i") },
@@ -53,13 +57,14 @@ const register = asyncHandler(async (req, res) => {
     );
 
   const user = await User.create({
-    username,
-    email,
-    firstName,
-    lastName,
+    username: username.trim(),
+    email: email.trim(),
+    firstName: firstName.trim(),
+    lastName: lastName.trim(),
     mobile,
-    password,
+    password: password.trim(),
   });
+
   if (!user)
     throw new ApiError(404, `Something went wrong while creating account`);
   // here we are sending welcome email to the user and not halting the response
@@ -79,9 +84,15 @@ const register = asyncHandler(async (req, res) => {
 });
 
 const login = asyncHandler(async (req, res) => {
-  const { username, password } = req.body;
+  let { username, password } = req.body;
   if ([username, password].some((field) => (field?.trim() ?? "") === ""))
     throw new ApiError(404, `username and password are required`);
+
+  //trim the username and password
+  username = username.trim();
+  password = password.trim();
+
+  //check if the user exist with the username and password
   const user = await User.findOne({
     username: { $regex: new RegExp(`^${username}$`, "i") },
   });
@@ -106,7 +117,6 @@ const login = asyncHandler(async (req, res) => {
       `Your account is not active. Please contact the admin to activate your account`
     );
   }
-  
 
   const isProd = process.env.NODE_ENV === "production";
 
@@ -183,33 +193,40 @@ const updateuserDetails = asyncHandler(async (req, res) => {
   if (!user) throw new ApiError(404, `invalid user request`);
 
   try {
-
-    if(firstName && firstName.trim() !== "" && firstName !== user.firstName) {
+    if (firstName && firstName.trim() !== "" && firstName !== user.firstName) {
       user.firstName = firstName;
     }
-    
-    if(lastName && lastName.trim() !== "" && lastName !== user.lastName) {
+
+    if (lastName && lastName.trim() !== "" && lastName !== user.lastName) {
       user.lastName = lastName;
     }
-    if(middleName && middleName.trim() !== "" && middleName !== user.middleName) {
+    if (
+      middleName &&
+      middleName.trim() !== "" &&
+      middleName !== user.middleName
+    ) {
       user.middleName = middleName;
     }
-    if(email && email.trim() !== "" && email !== user.email) {
+    if (email && email.trim() !== "" && email !== user.email) {
       user.email = email;
     }
-    if(mobile && mobile.trim() !== "" && mobile !== user.mobile) {
+    if (mobile && mobile.trim() !== "" && mobile !== user.mobile) {
       user.mobile = mobile;
     }
-    if(DOB && DOB.trim() !== "" && DOB !== user.DOB) {
+    if (DOB && DOB.trim() !== "" && DOB !== user.DOB) {
       user.DOB = DOB;
     }
-    if(school && school.trim() !== "" && school !== user.school) {
+    if (school && school.trim() !== "" && school !== user.school) {
       user.school = school;
     }
-    if(std && std.trim() !== "" && std !== user.std) {
+    if (std && std.trim() !== "" && std !== user.std) {
       user.std = std;
     }
-    if(mediumOfStudy && mediumOfStudy.trim() !== "" && mediumOfStudy !== user.mediumOfStudy) {
+    if (
+      mediumOfStudy &&
+      mediumOfStudy.trim() !== "" &&
+      mediumOfStudy !== user.mediumOfStudy
+    ) {
       user.mediumOfStudy = mediumOfStudy;
     }
     await user.save({ validateBeforeSave: false });
@@ -443,7 +460,6 @@ const getUserById = asyncHandler(async (req, res) => {
     .json(new ApiResponce(200, user, `User fetched successfully !!`));
 });
 
-
 export {
   register,
   login,
@@ -456,5 +472,4 @@ export {
   refreshAccessToken,
   getUserById,
   deleteFile,
-  
 };

@@ -16,9 +16,7 @@ const getAllActiveUsers = asyncHandler(async (req, res, next) => {
 
   const users = await User.find(
     {
-      $or: [
-        { isActive: true }
-      ],
+      $or: [{ isActive: true }],
     },
     {
       password: 0,
@@ -43,7 +41,9 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
       resetToken: 0,
       __v: 0,
     }
-  ).select("-password -refreshToken").sort({ isActive: -1 ,createdAt: -1});
+  )
+    .select("-password -refreshToken")
+    .sort({ isActive: -1, createdAt: -1 });
   if (!users) throw new ApiError(404, "No user found");
   res
     .status(200)
@@ -126,7 +126,7 @@ const updateUserPassword = asyncHandler(async (req, res, next) => {
     throw new ApiError(400, "Password is required");
   }
 
-  user.password = password;
+  user.password = password.trim();
   await user.save();
   res
     .status(200)
@@ -145,11 +145,11 @@ const updateUserUserName = asyncHandler(async (req, res, next) => {
     throw new ApiError(400, "UserName is required");
   }
   //check if userName already exists
-  const existingUser = await User.findOne({ username: newUserName });
+  const existingUser = await User.findOne({ username: newUserName.trim() });
   if (existingUser) {
     throw new ApiError(400, "UserName already exists");
   }
-  user.username = newUserName;
+  user.username = newUserName.trim();
   await user.save();
   res
     .status(200)
@@ -164,5 +164,5 @@ export {
   toggleActiveStatus,
   updateUserPassword,
   updateUserUserName,
-  getAllUsers
+  getAllUsers,
 };
