@@ -219,21 +219,15 @@ const updateuserDetails = asyncHandler(async (req, res) => {
   if (!user) throw new ApiError(404, `invalid user request`);
 
   try {
-    if (firstName && firstName.trim() !== "" && firstName !== user.firstName) {
+  
     if (firstName && firstName.trim() !== "" && firstName !== user.firstName) {
       user.firstName = firstName;
     }
 
     if (lastName && lastName.trim() !== "" && lastName !== user.lastName) {
-
-    if (lastName && lastName.trim() !== "" && lastName !== user.lastName) {
       user.lastName = lastName;
     }
-    if (
-      middleName &&
-      middleName.trim() !== "" &&
-      middleName !== user.middleName
-    ) {
+  
     if (
       middleName &&
       middleName.trim() !== "" &&
@@ -241,23 +235,24 @@ const updateuserDetails = asyncHandler(async (req, res) => {
     ) {
       user.middleName = middleName;
     }
-    if (email && email.trim() !== "" && email !== user.email) {
+
+  
     if (email && email.trim() !== "" && email !== user.email) {
       user.email = email;
     }
-    if (mobile && mobile.trim() !== "" && mobile !== user.mobile) {
+  
     if (mobile && mobile.trim() !== "" && mobile !== user.mobile) {
       user.mobile = mobile;
     }
-    if (DOB && DOB.trim() !== "" && DOB !== user.DOB) {
+  
     if (DOB && DOB.trim() !== "" && DOB !== user.DOB) {
       user.DOB = DOB;
     }
-    if (school && school.trim() !== "" && school !== user.school) {
+   
     if (school && school.trim() !== "" && school !== user.school) {
       user.school = school;
     }
-    if (std && std.trim() !== "" && std !== user.std) {
+   
     if (std && std.trim() !== "" && std !== user.std) {
       user.std = std;
     }
@@ -272,6 +267,7 @@ const updateuserDetails = asyncHandler(async (req, res) => {
     ) {
       user.mediumOfStudy = mediumOfStudy;
     }
+    
     await user.save({ validateBeforeSave: false });
     const updatedUser = await User.findById(id).select(
       "-password -refreshToken"
