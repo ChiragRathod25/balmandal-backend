@@ -4,7 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { Post } from "../models/post.model.js";
 import { createNotification } from "./notification.controller.js";
-import {logger} from "../utils/logger.js";
+import { logger } from "../utils/logger.js";
 
 //controllers list
 //0. UploadFilesToBucket
@@ -20,10 +20,10 @@ import {logger} from "../utils/logger.js";
 //10. toggleIsCommentsEnabled
 //11. toggleIsApproved
 //12. updatePostStatus
-const uploadFilesToBucket = asyncHandler(async (req, res,next) => {
-  let {content}=req.body;
-  if(!content){
-    throw new ApiError(400,"Content is required")
+const uploadFilesToBucket = asyncHandler(async (req, res, next) => {
+  let { content } = req.body;
+  if (!content) {
+    throw new ApiError(400, "Content is required");
   }
   // go through the content and find the image src and upload it to cloudinary and replace the src with the cloudinary url
   const regex = /<img[^>]+src="([^">]+)"/g;
@@ -31,18 +31,18 @@ const uploadFilesToBucket = asyncHandler(async (req, res,next) => {
   if (matches) {
     for (const match of matches) {
       let src = match.match(/src="([^">]+)"/)[1];
-      let intialSrc=src;
-      
-      //convert the server's public url to local url 
-      src=src.replace(process.env.API_BASE_URL,"public")
+      let intialSrc = src;
+
+      //convert the server's public url to local url
+      src = src.replace(process.env.API_BASE_URL, "public");
       //  //convert '/' to '\' for windows
       // src=src.replace(/\//g,"\\")
-      
+
       if (!src) {
         // logger.log("No src found in the image tag", match);
         continue;
       }
-      if(!src.includes("temp")){
+      if (!src.includes("temp")) {
         // logger.log("Content: ", content);
         // logger.log("Not a temp image, skipping upload", src);
         continue;
@@ -51,17 +51,20 @@ const uploadFilesToBucket = asyncHandler(async (req, res,next) => {
         console.log("Uploading image to cloudinary", src);
 
         const result = await uploadOnCloudinary(src);
-     
+
         req.body.content = content.replace(intialSrc, result.secure_url);
-        
       } catch (error) {
         logger.log("Error in uploading image to cloudinary", error);
-        throw new ApiError(500, "Error in uploading image to cloudinary",error);
+        throw new ApiError(
+          500,
+          "Error in uploading image to cloudinary",
+          error
+        );
       }
     }
   }
   next();
-})
+});
 
 const addPost = asyncHandler(async (req, res, next) => {
   const { title, content, slug, status, tags, isCommentEnable } = req.body;
@@ -104,15 +107,19 @@ const addPost = asyncHandler(async (req, res, next) => {
 
   // set data for the Approval notification for the Admin Users
   // Called after this methond form post.routes.js
-  const msg = `New post with title "<strong>${title}</strong>" has been created by <strong>@${req.user.username}</strong> and is waiting for approval.<br>
+  const notificationContent = `New post with title "<strong>${title}</strong>" has been created by <strong>@${req.user.username}</strong> and is waiting for approval.<br>
 <a href="/post/${post._id}">
   🔗 <span style="text-decoration:underline;color:blue;">Click here</span> to view the post
 </a>`;
 
+  // without tags, just message text
+  const notificationMessage = `New post with title "${title}" has been created by @${req.user.username} and is waiting for approval.`;
+
   req.body = {
     targetGroup: "Admin",
     title: "New Post Approval request",
-    message: msg,
+    message: notificationMessage,
+    notificationContent,
     notificationType: "Approval",
   };
   createNotification(req, res, next);
@@ -204,7 +211,10 @@ const getPostById = asyncHandler(async (req, res, next) => {
 });
 
 const getPosts = asyncHandler(async (req, res, next) => {
-  const posts = await Post.find({ isApproved: true }).sort({ approvedAt: -1, createdAt: -1 });
+  const posts = await Post.find({ isApproved: true }).sort({
+    approvedAt: -1,
+    createdAt: -1,
+  });
   res
     .status(200)
     .json(new ApiResponce(200, posts, "Posts found successfully !!"));
@@ -372,5 +382,5 @@ export {
   toggleIsCommentsEnabled,
   toggleIsApproved,
   updatePostStatus,
-  uploadFilesToBucket
+  uploadFilesToBucket,
 };

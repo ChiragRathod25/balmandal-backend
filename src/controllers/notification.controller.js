@@ -107,7 +107,7 @@ const pushNotification = asyncHandler(
 );
 
 const createNotification = asyncHandler(async (req, res) => {
-  const { createdFor, targetGroup, title, message, notificationType, link } =
+  const { createdFor, targetGroup, title, message, notificationType, link,notificationContent} =
     req.body;
 
   if ([title, message].some((field) => (field?.trim() ?? "") === "")) {
@@ -121,7 +121,6 @@ const createNotification = asyncHandler(async (req, res) => {
   let poster = null;
   if (req.file) {
     try {
-      ``;
       poster = await uploadOnCloudinary(req.file);
       if (!poster)
         throw new ApiError(404, "Error while uploading image on cloudinary");
@@ -139,6 +138,7 @@ const createNotification = asyncHandler(async (req, res) => {
       poster,
       message,
       link,
+      notificationContent,
       notificationType,
     });
 

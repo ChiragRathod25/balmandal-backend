@@ -106,7 +106,6 @@ const login = asyncHandler(async (req, res) => {
       `Your account is not active. Please contact the admin to activate your account`
     );
   }
-  
 
   const isProd = process.env.NODE_ENV === "production";
 
@@ -140,15 +139,40 @@ const login = asyncHandler(async (req, res) => {
 });
 
 const logout = asyncHandler(async (req, res) => {
-  await User.findByIdAndUpdate(
-    req.user._id,
-    {
-      $set: {
-        refreshToken: "",
-      },
-    },
-    { new: true }
-  );
+  //here we are not checking if the user is logged in or not,
+  // if the user is not logged in then we are just clearing the cookies
+  // and sending the response
+  // and if logged in then we are clearing the cookies and updating the user refresh token to empty string
+
+  const refreshToken =
+    req.cookies.refreshToken ||
+    req.body.refreshToken ||
+    req.header("Authorization")?.replace("Bearer ", "");
+
+  if (refreshToken) {
+    try {
+      const decodeToken = jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_SECRET
+      );
+
+      if(!decodeToken) throw new ApiError(404, `Invalid token`);
+
+      const user = await User.findById(decodeToken._id);
+      if (!user) throw new ApiError(404, `Invalid token`);
+
+      if (user.refreshToken !== refreshToken)
+        throw new ApiError(404, `Invalid token`);
+      // if the token is valid then we are updating the user refresh token to empty string
+      user.refreshToken = "";
+      await user.save({ validateBeforeSave: false });
+
+    } catch (error) {
+      // here no need to throw error if the token is invalid
+      // we are just clearing the cookies and sending the response
+      logger.error("Error while verifying refresh token", error);
+    }
+  }
 
   const isProd = process.env.NODE_ENV === "production";
 
@@ -177,39 +201,51 @@ const updateuserDetails = asyncHandler(async (req, res) => {
     school,
     std,
     mediumOfStudy,
+    address,
   } = req.body;
 
   const user = await User.findById(id);
   if (!user) throw new ApiError(404, `invalid user request`);
 
   try {
-
-    if(firstName && firstName.trim() !== "" && firstName !== user.firstName) {
+    if (firstName && firstName.trim() !== "" && firstName !== user.firstName) {
       user.firstName = firstName;
     }
-    
-    if(lastName && lastName.trim() !== "" && lastName !== user.lastName) {
+
+    if (lastName && lastName.trim() !== "" && lastName !== user.lastName) {
       user.lastName = lastName;
     }
-    if(middleName && middleName.trim() !== "" && middleName !== user.middleName) {
+    if (
+      middleName &&
+      middleName.trim() !== "" &&
+      middleName !== user.middleName
+    ) {
       user.middleName = middleName;
     }
-    if(email && email.trim() !== "" && email !== user.email) {
+    if (email && email.trim() !== "" && email !== user.email) {
       user.email = email;
     }
-    if(mobile && mobile.trim() !== "" && mobile !== user.mobile) {
+    if (mobile && mobile.trim() !== "" && mobile !== user.mobile) {
       user.mobile = mobile;
     }
-    if(DOB && DOB.trim() !== "" && DOB !== user.DOB) {
+    if (DOB && DOB.trim() !== "" && DOB !== user.DOB) {
       user.DOB = DOB;
     }
-    if(school && school.trim() !== "" && school !== user.school) {
+    if (school && school.trim() !== "" && school !== user.school) {
       user.school = school;
     }
-    if(std && std.trim() !== "" && std !== user.std) {
+    if (std && std.trim() !== "" && std !== user.std) {
       user.std = std;
     }
-    if(mediumOfStudy && mediumOfStudy.trim() !== "" && mediumOfStudy !== user.mediumOfStudy) {
+    if (address && address.trim() !== "" && address !== user.address) {
+      user.address = address;
+    }
+
+    if (
+      mediumOfStudy &&
+      mediumOfStudy.trim() !== "" &&
+      mediumOfStudy !== user.mediumOfStudy
+    ) {
       user.mediumOfStudy = mediumOfStudy;
     }
     await user.save({ validateBeforeSave: false });
@@ -315,7 +351,7 @@ const resetPassword = asyncHandler(async (req, res) => {
     .json(new ApiResponce(200, user, `User password updated successfully !!`));
 });
 
-//TODO: implement forget password
+
 const forgetPassword = asyncHandler(async (req, res) => {
   // steps
   // 1. get email and username from the request
@@ -384,7 +420,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     req.cookies.refreshToken || req.body.refreshToken;
   if (!incomingRefreshToken)
     throw new ApiError(404, `Refresh token is required`);
-  const decodeToken = await jwt.verify(
+  const decodeToken = jwt.verify(
     incomingRefreshToken,
     process.env.REFRESH_TOKEN_SECRET
   );
@@ -443,6 +479,24 @@ const getUserById = asyncHandler(async (req, res) => {
     .json(new ApiResponce(200, user, `User fetched successfully !!`));
 });
 
+const updatePassword= asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  if (!oldPassword || !newPassword)
+    throw new ApiError(400, `Old password and new password are required`);
+
+  const user = await User.findById(req.user._id);
+  if (!user) throw new ApiError(404, `Invalid user request`);
+
+  const isPasswordValid = await user.isPasswordCorrect(oldPassword);
+  if (!isPasswordValid) throw new ApiError(401, `Invalid old password`);
+
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: false });
+
+  res
+    .status(200)
+    .json(new ApiResponce(200, {}, `User password updated successfully !!`));
+});
 
 export {
   register,
@@ -456,5 +510,5 @@ export {
   refreshAccessToken,
   getUserById,
   deleteFile,
-  
+  updatePassword,
 };

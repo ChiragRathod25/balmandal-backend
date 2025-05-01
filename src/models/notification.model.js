@@ -13,28 +13,34 @@ const notificationSchema = new Schema(
         default: null, // null means it is a broadcast notification,
       },
     ],
-   
+
     title: {
       type: String,
       required: true,
     },
+    // this is the message that will be sent to the user
     message: {
       type: String,
       required: true,
     },
+    // this is the content that will be used to display the notification on the UI
+    notificationContent: {
+      type: String,
+    },
+
     notificationType: {
       type: String,
-      enum: ["info", "error", "warning", "success","Approval"],
+      enum: ["info", "error", "warning", "success", "Approval"],
       default: "info",
     },
     targetGroup: {
       type: String,
-      enum: ['All', 'Admin', 'Individual','Custom'],
-      default: 'All',
+      enum: ["All", "Admin", "Individual", "Custom"],
+      default: "All",
     },
-    poster:{
-        type:String,
-        default : null
+    poster: {
+      type: String,
+      default: null,
     },
     isReadBy: [
       {
@@ -46,7 +52,7 @@ const notificationSchema = new Schema(
           type: Date,
           default: null,
         },
-    },
+      },
     ],
     deliveredTo: [
       {
@@ -60,9 +66,9 @@ const notificationSchema = new Schema(
         },
       },
     ],
-    link:{
-      type:String,
-      default:null
+    link: {
+      type: String,
+      default: null,
     },
   },
   {
