@@ -134,7 +134,9 @@ const getAttendanceByEventId = asyncHandler(async (req, res, next) => {
   }
 
   // get all available users
-  const allUsers = await User.find({});
+  const allUsers = await User.find({
+    isActive: true, 
+  });
 
   // get all attendances for the event
   const attendances = await Attendance.aggregate([
