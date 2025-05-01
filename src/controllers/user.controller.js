@@ -34,13 +34,17 @@ const generateRefreshAccessToken = async (userId) => {
 };
 
 const register = asyncHandler(async (req, res) => {
-  const { username, email, firstName, lastName, mobile, password } = req.body;
+  let { username, email, firstName, lastName, mobile, password } = req.body;
   if (
     [username, email, firstName, lastName, mobile, password].some(
       (field) => (field?.trim() ?? "") === ""
     )
   )
     throw new ApiError(404, "All fields are required");
+
+  // trim the fields
+  username = username.trim();
+  email = email.trim();
 
   const existedUser = await User.findOne({
     username: { $regex: new RegExp(username, "i") },
@@ -53,13 +57,14 @@ const register = asyncHandler(async (req, res) => {
     );
 
   const user = await User.create({
-    username,
-    email,
-    firstName,
-    lastName,
+    username: username.trim(),
+    email: email.trim(),
+    firstName: firstName.trim(),
+    lastName: lastName.trim(),
     mobile,
-    password,
+    password: password.trim(),
   });
+
   if (!user)
     throw new ApiError(404, `Something went wrong while creating account`);
   // here we are sending welcome email to the user and not halting the response
@@ -79,9 +84,15 @@ const register = asyncHandler(async (req, res) => {
 });
 
 const login = asyncHandler(async (req, res) => {
-  const { username, password } = req.body;
+  let { username, password } = req.body;
   if ([username, password].some((field) => (field?.trim() ?? "") === ""))
     throw new ApiError(404, `username and password are required`);
+
+  //trim the username and password
+  username = username.trim();
+  password = password.trim();
+
+  //check if the user exist with the username and password
   const user = await User.findOne({
     username: { $regex: new RegExp(`^${username}$`, "i") },
   });
@@ -209,8 +220,11 @@ const updateuserDetails = asyncHandler(async (req, res) => {
 
   try {
     if (firstName && firstName.trim() !== "" && firstName !== user.firstName) {
+    if (firstName && firstName.trim() !== "" && firstName !== user.firstName) {
       user.firstName = firstName;
     }
+
+    if (lastName && lastName.trim() !== "" && lastName !== user.lastName) {
 
     if (lastName && lastName.trim() !== "" && lastName !== user.lastName) {
       user.lastName = lastName;
@@ -220,20 +234,30 @@ const updateuserDetails = asyncHandler(async (req, res) => {
       middleName.trim() !== "" &&
       middleName !== user.middleName
     ) {
+    if (
+      middleName &&
+      middleName.trim() !== "" &&
+      middleName !== user.middleName
+    ) {
       user.middleName = middleName;
     }
+    if (email && email.trim() !== "" && email !== user.email) {
     if (email && email.trim() !== "" && email !== user.email) {
       user.email = email;
     }
     if (mobile && mobile.trim() !== "" && mobile !== user.mobile) {
+    if (mobile && mobile.trim() !== "" && mobile !== user.mobile) {
       user.mobile = mobile;
     }
+    if (DOB && DOB.trim() !== "" && DOB !== user.DOB) {
     if (DOB && DOB.trim() !== "" && DOB !== user.DOB) {
       user.DOB = DOB;
     }
     if (school && school.trim() !== "" && school !== user.school) {
+    if (school && school.trim() !== "" && school !== user.school) {
       user.school = school;
     }
+    if (std && std.trim() !== "" && std !== user.std) {
     if (std && std.trim() !== "" && std !== user.std) {
       user.std = std;
     }
