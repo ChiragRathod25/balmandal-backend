@@ -155,8 +155,10 @@ const getAttendanceByEventId = asyncHandler(async (req, res, next) => {
           {
             $project: {
               firstName: 1,
+              middleName: 1,
               lastName: 1,
               username: 1,
+              mobile: 1,
               isActive: 1,
               _id: 0,
             },
