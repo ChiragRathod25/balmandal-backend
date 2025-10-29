@@ -29,13 +29,16 @@ router.route("/uploadFile").post(upload.single("upload"), async (req, res) => {
     res.status(200).json({ url: tempFilePath });
 });
 
+router.route("/:postId").get(getPostById);
+router.route("/").get(getPosts);
+
 router.use(verifyJWT);
 
-router.route("/").post(uploadFilesToBucket,addPost,createNotification).get(getPosts);
+router.route("/").post(uploadFilesToBucket,addPost,createNotification);
 router.route("/published").get(getPublishedPosts);
 router.route("/filter").get(getPostsByTag);
 router.route("/user/:userId").get(getPostsByUserId);
-router.route("/:postId").get(getPostById).put(uploadFilesToBucket,updatePost).delete(deletePost);
+router.route("/:postId").put(uploadFilesToBucket,updatePost).delete(deletePost);
 router.route("/:postId/publish").put(togglePublishStatus);
 router.route("/:postId/comments").put(toggleIsCommentsEnabled);
 router.route("/:postId/approval").put(toggleIsApproved);
